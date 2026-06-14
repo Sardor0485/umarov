@@ -29,8 +29,8 @@
 
         <div class="col-md-4">
             <div class="card bg-white border-primary">
-                <div class="fw-bold text-primary small border-bottom mb-1"><i class="bi bi-scale"></i> Calculator</div>
-                <div class="div-form">
+                <div class="fw-bold text-primary small border-bottom mb-1"><i class="bi bi-scale"></i> TEZKOR TAROZI AMALLARI</div>
+                <div>
                     <div class="mb-1 search-dropdown-container">
                         <label class="form-label m-0 fw-bold">Modelni qidiring</label>
                         <input type="text" id="modelSearchInput" class="form-control text-uppercase" placeholder="Model yozing..." oninput="onModelSearch()" onfocus="showDropdown()" onblur="setTimeout(hideDropdown, 300)">
@@ -71,7 +71,7 @@
 
             <div class="card bg-white">
                 <div class="fw-bold text-secondary small border-bottom mb-1"><i class="bi bi-gear-fill"></i> YANGI MODEL ANDOZASI</div>
-                <div class="div-form">
+                <div>
                     <div class="row g-1">
                         <div class="col-5">
                             <input type="text" id="tempName" class="form-control text-uppercase form-control-sm" placeholder="Model (N23)">
@@ -224,13 +224,12 @@
         resDisplay.innerText = mode === 'weight' ? Math.round(val / bitta_vazni) + " ta jami" : (val * bitta_vazni).toFixed(1) + " gr jami";
     }
 
-    // YANGI ANDOZA QO'SHISH (FORMASIZ TO'G'RIdan-TO'G'RI FUNKSIYA)
     async function addTemplate() {
         const key_name = document.getElementById('tempName').value;
         const etalon_weight = parseFloat(document.getElementById('tempEtalon').value);
 
         if(!key_name || !etalon_weight) {
-            alert("Iltimos, andoza ma'lumotlarini to'liq kiriting!");
+            alert("Andoza ma'lumotlarini to'liq kiriting!");
             return;
         }
 
@@ -255,7 +254,7 @@
         const value = parseFloat(document.getElementById('transValue').value);
 
         if(!key_name || input_display_name.toUpperCase() !== key_name.toUpperCase() || !value || value <= 0) {
-            alert("Iltimos, avval modelni ro'yxatdan qidirib tanlang va qiymat kiriting!");
+            alert("Avval modelni ro'yxatdan qidirib tanlang va to'g'ri qiymat kiriting!");
             return;
         }
 
