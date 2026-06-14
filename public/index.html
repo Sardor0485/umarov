@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarozi Tizimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #eaeaea; padding: 3px !important; margin: 0 !important; }
+        .card { border-radius: 4px; border: 1px solid #ccc; margin-bottom: 3px !important; padding: 4px !important; }
+        .form-control, .btn, .form-select { padding: 3px 6px; font-size: 13px; border-radius: 3px; }
+        th, td { padding: 4px !important; font-size: 12px; vertical-align: middle; }
+        .search-dropdown-container { position: relative; }
+        .dropdown-menu-custom {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 1px solid #ccc; border-radius: 3px;
+            max-height: 200px; overflow-y: auto; z-index: 1000; display: none; padding: 0;
+        }
+        .dropdown-item-custom { padding: 5px 8px; font-size: 13px; cursor: pointer; list-style: none; }
+        .dropdown-item-custom:hover { background-color: #0d6efd; color: white; }
+        .stock-danger { background-color: #f8d7da !important; color: #842029; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-1">
+
+        <div class="col-md-4">
+            <div class="card bg-white border-primary">
+                <div class="fw-bold text-primary small border-bottom mb-1"><i class="bi bi-scale"></i> Calculator</div>
+                <div class="div-form">
+                    <div class="mb-1 search-dropdown-container">
+                        <label class="form-label m-0 fw-bold">Modelni qidiring</label>
+                        <input type="text" id="modelSearchInput" class="form-control text-uppercase" placeholder="Model yozing..." oninput="onModelSearch()" onfocus="showDropdown()" onblur="setTimeout(hideDropdown, 300)">
+                        <ul id="modelDropdownList" class="dropdown-menu-custom"></ul>
+                        <input type="hidden" id="selectedModelName">
+                        <input type="hidden" id="selectedModelEtalon">
+                    </div>
+
+                    <div class="row g-1 mb-1">
+                        <div class="col-6">
+                            <label class="form-label m-0 fw-bold">Kiritish turi</label>
+                            <select id="transMode" class="form-select" onchange="toggleMode()">
+                                <option value="weight">Vazn (gr)</option>
+                                <option value="qty">Soni (ta)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label m-0 fw-bold" id="valLabel">Vaznni yozing (gr)</label>
+                            <input type="number" step="0.1" id="transValue" class="form-control" oninput="liveCalculate()">
+                        </div>
+                    </div>
+
+                    <div class="p-1 my-1 text-center bg-light border rounded">
+                        <span class="text-muted small d-block">HISOBLANDI:</span>
+                        <h4 id="liveResult" class="m-0 text-dark fw-bold">0</h4>
+                    </div>
+
+                    <div class="row g-1">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-success w-100 fw-bold btn-sm" onclick="sendTransaction('add')"><i class="bi bi-plus-circle"></i> KIRIM (+)</button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-danger w-100 fw-bold btn-sm" onclick="sendTransaction('sub')"><i class="bi bi-dash-circle"></i> CHIQIM (-)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white">
+                <div class="fw-bold text-secondary small border-bottom mb-1"><i class="bi bi-gear-fill"></i> YANGI MODEL ANDOZASI</div>
+                <div class="div-form">
+                    <div class="row g-1">
+                        <div class="col-5">
+                            <input type="text" id="tempName" class="form-control text-uppercase form-control-sm" placeholder="Model (N23)">
+                        </div>
+                        <div class="col-4">
+                            <input type="number" step="0.01" id="tempEtalon" class="form-control form-control-sm" placeholder="10 ta (gr)">
+                        </div>
+                        <div class="col-3">
+                            <button type="button" class="btn btn-secondary btn-sm w-100 fw-bold" onclick="addTemplate()">OK</button>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-dark w-100 btn-sm fw-bold mt-1" onclick="openLogsModal()"><i class="bi bi-clock-history"></i> TARIXNI KO'RISH</button>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <input type="text" id="searchBox" class="form-control form-control-sm w-50" placeholder="Modelni qidirish..." oninput="filterStock()">
+                    <button class="btn btn-success btn-sm fw-bold" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> EXCEL</button>
+                </div>
+                <div class="table-responsive" style="max-height: 88vh; overflow-y: auto;">
+                    <table class="table table-bordered table-sm m-0" id="stockTable">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Model nomi</th>
+                                <th>Jami vazn</th>
+                                <th>Jami soni</th>
+                                <th class="text-center" style="width: 50px;">O'chirish</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="logsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h6 class="modal-title fw-bold">Kirim / Chiqim Loglari</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-1">
+                <table class="table table-sm table-striped m-0" style="font-size: 12px;">
+                    <thead class="table-dark">
+                        <tr><th>Vaqt</th><th>Model</th><th>Amal</th><th>Vazn</th><th>Soni</th></tr>
+                    </thead>
+                    <tbody id="logsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dbStock = [];
+    let dbTemplates = [];
+    let logsModal;
+    const API_URL = '/api';
+
+    async function loadData() {
+        try {
+            const resTemp = await fetch(`${API_URL}/templates`);
+            dbTemplates = await resTemp.json();
+            renderDropdownList(dbTemplates);
+
+            const resStock = await fetch(`${API_URL}/stock`);
+            dbStock = await resStock.json();
+            renderStockTable(dbStock);
+        } catch (err) {
+            console.error("Ma'lumot yuklashda xato:", err);
+        }
+    }
+
+    function renderDropdownList(list) {
+        const ul = document.getElementById('modelDropdownList');
+        ul.innerHTML = '';
+        if (list.length === 0) {
+            ul.innerHTML = `<li class="dropdown-item-custom text-muted">Topilmadi</li>`;
+            return;
+        }
+        list.forEach(t => {
+            const li = document.createElement('li');
+            li.className = 'dropdown-item-custom';
+            li.innerText = `${t.model_nomi} (10ta = ${t.vazn_10_dona}g)`;
+            li.onmousedown = () => selectModel(t.model_nomi, t.vazn_10_dona);
+            ul.appendChild(li);
+        });
+    }
+
+    function onModelSearch() {
+        const query = document.getElementById('modelSearchInput').value.toLowerCase();
+        const filtered = dbTemplates.filter(t => t.model_nomi.toLowerCase().includes(query));
+        renderDropdownList(filtered);
+        showDropdown();
+    }
+
+    function selectModel(name, etalon) {
+        document.getElementById('modelSearchInput').value = name;
+        document.getElementById('selectedModelName').value = name;
+        document.getElementById('selectedModelEtalon').value = etalon;
+        hideDropdown();
+        liveCalculate();
+    }
+
+    function showDropdown() { document.getElementById('modelDropdownList').style.display = 'block'; }
+    function hideDropdown() { document.getElementById('modelDropdownList').style.display = 'none'; }
+
+    function renderStockTable(list) {
+        const tbody = document.getElementById('stockTableBody');
+        tbody.innerHTML = '';
+        list.forEach(item => {
+            const isLow = item.jami_soni < 500 ? 'stock-danger' : '';
+            const warningIcon = item.jami_soni < 500 ? '⚠️ ' : '';
+
+            tbody.innerHTML += `
+                <tr class="${isLow}">
+                    <td class="fw-bold">${warningIcon}${item.model_nomi}</td>
+                    <td>${parseFloat(item.jami_vazn).toFixed(1)} gr</td>
+                    <td class="fw-bold">${item.jami_soni} ta</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-danger py-0 px-1" onclick="deleteModel('${item.model_nomi}')"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function toggleMode() {
+        const mode = document.getElementById('transMode').value;
+        document.getElementById('valLabel').innerText = mode === 'weight' ? 'Vaznni yozing (gr)' : 'Sonini yozing (ta)';
+        liveCalculate();
+    }
+
+    function liveCalculate() {
+        const key_name = document.getElementById('selectedModelName').value;
+        const etalon = parseFloat(document.getElementById('selectedModelEtalon').value);
+        const mode = document.getElementById('transMode').value;
+        const val = parseFloat(document.getElementById('transValue').value);
+        const resDisplay = document.getElementById('liveResult');
+
+        if(!document.getElementById('modelSearchInput').value || !key_name || !val || val <= 0) { resDisplay.innerText = "0"; return; }
+        const bitta_vazni = etalon / 10;
+        resDisplay.innerText = mode === 'weight' ? Math.round(val / bitta_vazni) + " ta jami" : (val * bitta_vazni).toFixed(1) + " gr jami";
+    }
+
+    // YANGI ANDOZA QO'SHISH (FORMASIZ TO'G'RIdan-TO'G'RI FUNKSIYA)
+    async function addTemplate() {
+        const key_name = document.getElementById('tempName').value;
+        const etalon_weight = parseFloat(document.getElementById('tempEtalon').value);
+
+        if(!key_name || !etalon_weight) {
+            alert("Iltimos, andoza ma'lumotlarini to'liq kiriting!");
+            return;
+        }
+
+        try {
+            await fetch(`${API_URL}/templates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key_name, etalon_weight })
+            });
+            document.getElementById('tempName').value = '';
+            document.getElementById('tempEtalon').value = '';
+            await loadData();
+        } catch (err) {
+            console.error("Andoza yaratishda xato:", err);
+        }
+    }
+
+    async function sendTransaction(type) {
+        const key_name = document.getElementById('selectedModelName').value;
+        const input_display_name = document.getElementById('modelSearchInput').value;
+        const mode = document.getElementById('transMode').value;
+        const value = parseFloat(document.getElementById('transValue').value);
+
+        if(!key_name || input_display_name.toUpperCase() !== key_name.toUpperCase() || !value || value <= 0) {
+            alert("Iltimos, avval modelni ro'yxatdan qidirib tanlang va qiymat kiriting!");
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/stock/transaction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key_name, type, mode, value })
+        });
+
+        const result = await response.json();
+        if (!response.ok) { alert(result.error); return; }
+
+        document.getElementById('transValue').value = '';
+        document.getElementById('modelSearchInput').value = '';
+        document.getElementById('selectedModelName').value = '';
+        document.getElementById('selectedModelEtalon').value = '';
+        document.getElementById('liveResult').innerText = '0';
+        loadData();
+    }
+
+    async function deleteModel(name) {
+        if(confirm("Ushbu modelni o'chirmoqchimisiz?")) {
+            await fetch(`${API_URL}/stock/${name}`, { method: 'DELETE' });
+            loadData();
+        }
+    }
+
+    async function openLogsModal() {
+        const res = await fetch(`${API_URL}/logs`);
+        const logs = await res.json();
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '';
+        logs.forEach(log => {
+            const date = log.vaqti ? new Date(log.vaqti).toLocaleString('uz-UZ') : 'Noma\'lum';
+            let color = log.amal_turi === 'KIRIM' ? 'text-success' : 'text-danger';
+            tbody.innerHTML += `<tr><td>${date}</td><td>${log.model_nomi}</td><td class="${color} fw-bold">${log.amal_turi}</td><td>${parseFloat(log.o_zgarish_vazni).toFixed(1)}g</td><td>${log.o_zgarish_soni}ta</td></tr>`;
+        });
+        logsModal.show();
+    }
+
+    function filterStock() {
+        const query = document.getElementById('searchBox').value.toLowerCase();
+        const filtered = dbStock.filter(item => item.model_nomi.toLowerCase().includes(query));
+        renderStockTable(filtered);
+    }
+
+    function exportToExcel() {
+        let html = document.getElementById("stockTable").outerHTML;
+        let url = 'data:application/vnd.ms-excel,' + encodeURIComponent(html);
+        let link = document.createElement('a');
+        link.download = 'Ombor_Qoldiq.xls';
+        link.href = url;
+        link.click();
+    }
+
+    window.onload = function() {
+        loadData();
+        logsModal = new bootstrap.Modal(document.getElementById('logsModal'));
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

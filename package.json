@@ -1,0 +1,15 @@
+{
+  "name": "key",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scripts": {
+  "start": "node server.js"
+
+ } }
+}
